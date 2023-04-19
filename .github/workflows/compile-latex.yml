@@ -1,0 +1,44 @@
+name: Latex action
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'doc/1chipML_manual.tex'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'doc/1chipML_manual.tex'
+
+jobs:
+  compile-latex:
+    name: Compile and Add Latex
+    runs-on: ubuntu-22.04
+    env: 
+          CI_COMMIT_MESSAGE: Built latex manual
+          CI_COMMIT_AUTHOR: Continuous Integration
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Install pdflatex
+        run: sudo apt-get install -y texlive-latex-base  texlive-latex-extra texlive-science texlive-font-utils
+
+      - name: Compile latex
+        run: cd doc && pdflatex 1chipML_manual.tex
+
+      - name: Upload PDF file
+        if: github.event_name == 'push'
+        run: |
+          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          git config --global user.email "${{ env.CI_COMMIT_AUTHOR }}@users.noreply.github.com"
+          git add  doc/1chipML_manual.pdf
+          git commit -s -m "${{ env.CI_COMMIT_MESSAGE }}"
+          git push
